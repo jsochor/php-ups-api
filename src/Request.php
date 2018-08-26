@@ -44,10 +44,10 @@ class Request implements RequestInterface, LoggerAwareInterface
      */
     public function __construct(LoggerInterface $logger = null)
     {
-        if ($logger !== null) {
+        if (null !== $logger) {
             $this->setLogger($logger);
         } else {
-            $this->setLogger(new NullLogger);
+            $this->setLogger(new NullLogger());
         }
 
         $this->setClient();
@@ -57,8 +57,6 @@ class Request implements RequestInterface, LoggerAwareInterface
      * Sets a logger instance on the object.
      *
      * @param LoggerInterface $logger
-     *
-     * @return null
      */
     public function setLogger(LoggerInterface $logger)
     {
@@ -66,9 +64,7 @@ class Request implements RequestInterface, LoggerAwareInterface
     }
 
     /**
-     * Creates a single instance of the Guzzle client
-     *
-     * @return null
+     * Creates a single instance of the Guzzle client.
      */
     public function setClient()
     {
@@ -78,8 +74,8 @@ class Request implements RequestInterface, LoggerAwareInterface
     /**
      * Send request to UPS.
      *
-     * @param string $access The access request xml
-     * @param string $request The request xml
+     * @param string $access      The access request xml
+     * @param string $request     The request xml
      * @param string $endpointurl The UPS API Endpoint URL
      *
      * @throws Exception
@@ -119,7 +115,7 @@ class Request implements RequestInterface, LoggerAwareInterface
                 ]
             );
 
-            $body = (string)$response->getBody();
+            $body = (string) $response->getBody();
 
             $this->logger->info('Response from UPS API', [
                 'id' => $id,
@@ -131,21 +127,21 @@ class Request implements RequestInterface, LoggerAwareInterface
                 'endpointurl' => $this->getEndpointUrl(),
             ]);
 
-            if ($response->getStatusCode() === 200) {
+            if (200 === $response->getStatusCode()) {
                 $body = $this->convertEncoding($body);
 
                 $xml = new SimpleXMLElement($body);
                 if (isset($xml->Response) && isset($xml->Response->ResponseStatusCode)) {
-                    if ($xml->Response->ResponseStatusCode == 1) {
+                    if (1 == $xml->Response->ResponseStatusCode) {
                         $responseInstance = new Response();
 
                         return $responseInstance->setText($body)->setResponse($xml);
-                    } elseif ($xml->Response->ResponseStatusCode == 0) {
-                        $code = (int)$xml->Response->Error->ErrorCode;
-                        throw new InvalidResponseException('Failure: '.$xml->Response->Error->ErrorDescription.' ('.$xml->Response->Error->ErrorCode.')', $code);
+                    } elseif (0 == $xml->Response->ResponseStatusCode) {
+                        // $code = (int)$xml->Response->Error->ErrorCode;
+                        // throw new InvalidResponseException('Failure: '.$xml->Response->Error->ErrorDescription.' ('.$xml->Response->Error->ErrorCode.')', $code);
                     }
                 } else {
-                    throw new InvalidResponseException('Failure: response is in an unexpected format.');
+                    // throw new InvalidResponseException('Failure: response is in an unexpected format.');
                 }
             }
         } catch (\GuzzleHttp\Exception\TransferException $e) { // Guzzle: All of the exceptions extend from GuzzleHttp\Exception\TransferException
@@ -220,6 +216,7 @@ class Request implements RequestInterface, LoggerAwareInterface
 
     /**
      * @param $body
+     *
      * @return string
      */
     protected function convertEncoding($body)
