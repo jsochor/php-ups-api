@@ -22,13 +22,12 @@ class Tracking extends Ups
     private $request;
 
     /**
-     *
      * Workaround flag to handle Multiple shipment nodes in tracking response
-     * See GitHub Issue #117
+     * See GitHub Issue #117.
      *
      * @todo: fix in next major release
      *
-     * @var boolean
+     * @var bool
      */
     protected $allowMultipleShipments = false;
 
@@ -70,12 +69,12 @@ class Tracking extends Ups
     private $endDate;
 
     /**
-     * @param string|null $accessKey UPS License Access Key
-     * @param string|null $userId UPS User ID
-     * @param string|null $password UPS User Password
-     * @param bool $useIntegration Determine if we should use production or CIE URLs.
+     * @param string|null           $accessKey      UPS License Access Key
+     * @param string|null           $userId         UPS User ID
+     * @param string|null           $password       UPS User Password
+     * @param bool                  $useIntegration determine if we should use production or CIE URLs
      * @param RequestInterface|null $request
-     * @param LoggerInterface|null $logger PSR3 compatible logger (optional)
+     * @param LoggerInterface|null  $logger         PSR3 compatible logger (optional)
      */
     public function __construct($accessKey = null, $userId = null, $password = null, $useIntegration = false, RequestInterface $request = null, LoggerInterface $logger = null)
     {
@@ -88,8 +87,8 @@ class Tracking extends Ups
     /**
      * Get package tracking information.
      *
-     * @param string $trackingNumber The package's tracking number.
-     * @param string $requestOption Optional processing. For Mail Innovations the only valid options are Last Activity and All activity.
+     * @param string $trackingNumber the package's tracking number
+     * @param string $requestOption  Optional processing. For Mail Innovations the only valid options are Last Activity and All activity.
      *
      * @throws Exception
      *
@@ -122,10 +121,9 @@ class Tracking extends Ups
     }
 
     /**
-     * Set shipper number
+     * Set shipper number.
      *
      * @param string $shipperNumber
-     *
      */
     public function setShipperNumber($shipperNumber)
     {
@@ -133,10 +131,9 @@ class Tracking extends Ups
     }
 
     /**
-     * Set begin date
+     * Set begin date.
      *
      * @param DateTime $beginDate
-     *
      */
     public function setBeginDate(DateTime $beginDate)
     {
@@ -144,10 +141,9 @@ class Tracking extends Ups
     }
 
     /**
-     * Set end date
+     * Set end date.
      *
      * @param DateTime $endDate
-     *
      */
     public function setEndDate(DateTime $endDate)
     {
@@ -156,29 +152,37 @@ class Tracking extends Ups
 
     /**
      * @return stdClass
+     *
      * @throws Exception
      */
     private function getFormattedResponse()
     {
+        $weiter = false;
         $this->response = $this->getRequest()->request(
             $this->createAccess(),
             $this->createRequest(),
             $this->compileEndpointUrl(self::ENDPOINT)
         );
-        $response = $this->response->getResponse();
-
-        if (null === $response) {
-            throw new Exception('Failure (0): Unknown error', 0);
+        try {
+            $response = $this->response->getResponse();
+            $weiter = true;
+        } catch (\Exception $e) {
         }
 
-        if ($response instanceof SimpleXMLElement && $response->Response->ResponseStatusCode == 0) {
-            throw new Exception(
+        if ($weiter) {
+            if (null === $response) {
+                throw new Exception('Failure (0): Unknown error', 0);
+            }
+
+            if ($response instanceof SimpleXMLElement && 0 == $response->Response->ResponseStatusCode) {
+                throw new Exception(
                 "Failure ({$response->Response->Error->ErrorSeverity}): {$response->Response->Error->ErrorDescription}",
-                (int)$response->Response->Error->ErrorCode
+                (int) $response->Response->Error->ErrorCode
             );
-        }
+            }
 
-        return $this->formatResponse($response);
+            return $this->formatResponse($response);
+        }
     }
 
     /**
@@ -189,9 +193,8 @@ class Tracking extends Ups
     private function isMailInnovations()
     {
         $patterns = [
-
             // UPS Mail Innovations tracking numbers
-            '/^MI\d{6}\d{1,22}$/',// MI 000000 00000000+
+            '/^MI\d{6}\d{1,22}$/', // MI 000000 00000000+
 
             // USPS - Certified Mail
             '/^94071\d{17}$/',    // 9407 1000 0000 0000 0000 00
@@ -231,7 +234,7 @@ class Tracking extends Ups
 
             // USPS - Tracking
             '/^94\d{20}$/',       // 9400 1000 0000 0000 0000 00
-            '/^03\d{18}$/'        // 0300 0000 0000 0000 0000
+            '/^03\d{18}$/',        // 0300 0000 0000 0000 0000
         ];
 
         foreach ($patterns as $pattern) {
@@ -316,6 +319,7 @@ class Tracking extends Ups
             if (!is_array($response->Shipment)) {
                 $response->Shipment = [$response->Shipment];
             }
+
             return $response;
         }
 
@@ -368,6 +372,7 @@ class Tracking extends Ups
 
     /**
      * @param bool $value
+     *
      * @return $this
      */
     public function allowMultipleShipments($value = true)
