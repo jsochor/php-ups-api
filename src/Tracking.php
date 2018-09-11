@@ -164,8 +164,10 @@ class Tracking extends Ups
             $this->compileEndpointUrl(self::ENDPOINT)
         );
         try {
-            $response = $this->response->getResponse();
-            $weiter = true;
+            if ($this->response) {
+                $response = $this->response->getResponse();
+                $weiter = true;
+            }
         } catch (\Exception $e) {
         }
 
